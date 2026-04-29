@@ -105,6 +105,10 @@ static readstat_error_t sas7bcat_parse_value_labels(const char *value_start, siz
             char string_val[4*16+1];
             if (is_string) {
                 size_t value_entry_len = 6 + sas_read2(&lbp1[2], ctx->bswap);
+                if (&lbp1[value_entry_len] - value_start > value_labels_len) {
+                    retval = READSTAT_ERROR_PARSE;
+                    goto cleanup;
+                }
                 retval = readstat_convert(string_val, sizeof(string_val),
                         &lbp1[value_entry_len-16], 16, ctx->converter);
                 if (retval != READSTAT_OK)
