@@ -25,6 +25,7 @@ Makefile
 Makefile.in
 missing
 readstat
+tags
 test-driver
 autom4te.cache/*
 output.*
