@@ -288,12 +288,13 @@ static readstat_error_t sas7bdat_parse_row_size_subheader(const char *subheader,
     }
 
     ctx->page_row_count = page_row_count;
-    uint64_t total_row_count_after_skipping = total_row_count - deleted_row_count;
-    if (total_row_count > ctx->row_offset) {
+    uint64_t live_row_count = total_row_count - deleted_row_count;
+    uint64_t total_row_count_after_skipping = live_row_count;
+    if (live_row_count > ctx->row_offset) {
         total_row_count_after_skipping -= ctx->row_offset;
     } else {
         total_row_count_after_skipping = 0;
-        ctx->row_offset = total_row_count;
+        ctx->row_offset = live_row_count;
     }
     if (ctx->row_limit == 0 || total_row_count_after_skipping < ctx->row_limit)
         ctx->row_limit = total_row_count_after_skipping;
@@ -994,7 +995,7 @@ static readstat_error_t sas7bdat_parse_deleted_row_bitmap(const char *page, cons
         page_unused_bytes = sas_read4(&page[12], ctx->bswap);
     }
     uint32_t row_count = ctx->page_row_count < ctx->total_row_count ? ctx->page_row_count : ctx->total_row_count;
-    uint64_t deleted_row_bitmap_offset = row_count * ctx->row_length + page_unused_bytes;
+    uint64_t deleted_row_bitmap_offset = (uint64_t)row_count * ctx->row_length + page_unused_bytes;
     uint32_t required_bytes = row_count / CHAR_BIT + (row_count % CHAR_BIT == 0 ? 0 : 1);
 
     if ((data - page) + deleted_row_bitmap_offset + required_bytes > page_size) {

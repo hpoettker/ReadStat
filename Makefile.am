@@ -82,6 +82,8 @@ endif
 
 dist_man1_MANS = man/readstat.man man/extract_metadata.man
 
+EXTRA_DIST = resources/datetime.sas7bdat
+
 include_HEADERS = src/readstat.h
 
 noinst_HEADERS = \

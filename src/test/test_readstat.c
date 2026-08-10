@@ -28,6 +28,13 @@ static rt_test_args_t _test_args[] = {
     {
         .row_limit = 1,
         .row_offset = 1,
+    },
+    {
+        /* For resources/datetime.sas7bdat, this offset lands between the
+         * live row count and the physical row count, exercising the
+         * deleted-row arithmetic */
+        .row_limit = 0,
+        .row_offset = 4,
     }
 };
 

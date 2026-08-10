@@ -46,17 +46,23 @@ void buffer_ctx_reset(rt_buffer_ctx_t *buffer_ctx) {
 }
 
 readstat_error_t buffer_read_from_resource(rt_buffer_t *buffer, char *resource_name) {
-    const char *path_prefix = "resources/";
-    int retval = READSTAT_OK;
+    /* srcdir is exported by the automake test harness for VPATH builds */
+    const char *srcdir = getenv("srcdir");
+    if (srcdir == NULL)
+        srcdir = ".";
+    const char *path_prefix = "/resources/";
+    readstat_error_t retval = READSTAT_OK;
 
     FILE* file = NULL;
-    char *resource_path = malloc(strlen(path_prefix) + strlen(resource_name) + 1);
+    buffer_reset(buffer);
+    char *resource_path = malloc(strlen(srcdir) + strlen(path_prefix) + strlen(resource_name) + 1);
     if (resource_path == NULL) {
         retval = READSTAT_ERROR_MALLOC;
         goto cleanup;
     }
 
-    strcpy(resource_path, path_prefix);
+    strcpy(resource_path, srcdir);
+    strcat(resource_path, path_prefix);
     strcat(resource_path, resource_name);
     file = fopen(resource_path, "rb");
     if (!file) {
@@ -68,7 +74,6 @@ readstat_error_t buffer_read_from_resource(rt_buffer_t *buffer, char *resource_n
     while (1) {
         buffer_grow(buffer, CHUNK_SIZE);
         if (!buffer->bytes) {
-            free(buffer);
             retval = READSTAT_ERROR_MALLOC;
             goto cleanup;
         }
@@ -76,7 +81,6 @@ readstat_error_t buffer_read_from_resource(rt_buffer_t *buffer, char *resource_n
         size_t bytes_read = fread(buffer->bytes + buffer->used, 1, CHUNK_SIZE, file);
         buffer->used += bytes_read;
         if (ferror(file)) {
-            buffer_free(buffer);
             retval = READSTAT_ERROR_READ;
             goto cleanup;
         }
