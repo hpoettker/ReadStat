@@ -441,6 +441,13 @@ static readstat_error_t sas7bdat_handle_data_value(readstat_variable_t *variable
     } else if (col_info->type == READSTAT_TYPE_DOUBLE) {
         uint64_t  val = 0;
         double dval = NAN;
+        if (col_info->width < 1 || col_info->width > 8) {
+            /* A DOUBLE is 3-8 bytes on disk, but col_info can be mutated by a
+             * COLUMN_ATTRS subheader after the columns were validated. Guard
+             * here so a corrupt width can't produce an undefined shift below. */
+            retval = READSTAT_ERROR_PARSE;
+            goto cleanup;
+        }
         if (ctx->little_endian) {
             int k;
             for (k=0; k<col_info->width; k++) {
