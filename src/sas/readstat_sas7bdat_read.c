@@ -892,6 +892,22 @@ static sas_subheader_type_t sas7bdat_parse_subheader_type(const char* subheader,
         return sas7bdat_parse_subheader_type_32(signature_32);
     }
 
+    if (!ctx->little_endian) {
+        /* Big-endian 64-bit files lay out signatures differently from
+         * little-endian ones: ROW_SIZE and COLUMN_SIZE occupy only the first
+         * four bytes (the remaining four are unspecified), while the 0xFFFF...
+         * family is written as 0xFFFFFFFF followed by the 32-bit signature. */
+        uint32_t signature_32 = sas_read4(subheader, ctx->bswap);
+        if (signature_32 == SAS_SUBHEADER_SIGNATURE_ROW_SIZE) {
+            return SAS_SUBHEADER_TYPE_ROW_SIZE;
+        } else if (signature_32 == SAS_SUBHEADER_SIGNATURE_COLUMN_SIZE) {
+            return SAS_SUBHEADER_TYPE_COLUMN_SIZE;
+        } else if (signature_32 != SAS_SUBHEADER_SIGNATURE_COLUMN_NAME) {
+            return SAS_SUBHEADER_TYPE_DATA;
+        }
+        return sas7bdat_parse_subheader_type_32(sas_read4(&subheader[4], ctx->bswap));
+    }
+
     uint64_t signature = sas_read8(subheader, ctx->bswap);
     if (signature == SAS_SUBHEADER_SIGNATURE_ROW_SIZE) {
         return SAS_SUBHEADER_TYPE_ROW_SIZE;
